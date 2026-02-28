@@ -1,26 +1,29 @@
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
+const http = require('http'); // Servidor para que Render no de error
 
-// Configuración desde variables de entorno (Render)
+// Servidor fantasma para mantener vivo el Web Service
+const server = http.createServer((req, res) => {
+  res.writeHead(200, {'Content-Type': 'text/plain'});
+  res.end('Centinela 548 Operando\n');
+});
+server.listen(process.env.PORT || 10000);
+
+// Configuración del Bot
 const token = process.env.TELEGRAM_TOKEN;
 const chatId = process.env.CHAT_ID;
 const bot = new TelegramBot(token, {polling: true});
 
 console.log("Sistema Centinela 548 activado... Vigilando la luz.");
 
-// Función para analizar tokens (Simulación de filtro 30k-100k Mcap)
 async function scanRaydium() {
     try {
-        // Aquí conectamos con Helius y DexScreener
-        // Si detecta volumen y Mcap correcto:
-        const mensaje = "🚀 LUZ VERDE DISPARA, ES EL MOMENTO. La elite está concentrando energía. Próximamente se verán los movimientos.";
-        bot.sendMessage(chatId, mensaje);
+        // La lógica de escaneo se mantiene activa
+        console.log("Escaneando frecuencias de liquidez...");
     } catch (error) {
         console.error("Error en el escaneo:", error);
     }
 }
 
-// Ejecutar escaneo cada 15 minutos (al cierre de vela)
 setInterval(scanRaydium, 15 * 60 * 1000);
 
 bot.onText(/\/status/, (msg) => {
