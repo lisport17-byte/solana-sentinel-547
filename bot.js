@@ -9,18 +9,18 @@ const { enviar_telegram } = require('./notificador');
 const PORT = process.env.PORT || 10000;
 http.createServer((req, res) => { 
     res.writeHead(200, {'Content-Type': 'text/plain'}); 
-    res.end('Centinela 548: Francotirador Activo'); 
+    res.end('Centinela 548: Francotirador Activo y Blindado'); 
 }).listen(PORT, () => {
-    console.log(`==> Servidor activo en puerto ${PORT}. Sin interferencias de Polling.`);
+    console.log(`==> Servidor activo en puerto ${PORT}. Sin interferencias.`);
 });
 
 // --- 3. IDENTIDAD Y VARIABLES ---
 const groqApiKey = process.env.GROQ_API_KEY;
 
-console.log("==> Iniciando Secuencia de Arranque Centinela 548 (Modo Francotirador Puro)...");
+console.log("==> Iniciando Secuencia de Arranque Centinela 548 (Modo Francotirador Blindado)...");
 
-// Disparo de prueba usando tu notificador
-enviar_telegram("🔌 <b>Protocolo 548:</b> Modo Francotirador activado. Sin interferencias de red. Vigilando la luz.");
+// Disparo de prueba 
+enviar_telegram("🔌 <b>Protocolo 548:</b> Modo Francotirador activado. Escudo Regex en línea. Vigilando la luz.");
 
 // --- 4. MEMORIA DE ERRORES (Modo Estático) ---
 const archivoMemoria = 'memoria_errores.json';
@@ -45,7 +45,7 @@ async function consultarOraculoIA(datosDelToken) {
         Si hay dudas o peligro, responde "RECHAZADO" y el motivo.`;
 
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: "llama-3.3-70b-versatile",            
+            model: "llama-3.3-70b-versatile", // Modelo de última generación
             messages: [
                 { role: "system", content: promptSystem },
                 { role: "user", content: "Analiza esta gema y cruza los datos con nuestra memoria." }
@@ -101,7 +101,8 @@ async function cazarGemas() {
                         volumen_24h: pairData.volume.h24
                     });
 
-                    if (analisisIA.includes("luz verde dispara")) {
+                    // --- EL BLINDAJE REGEX APLICADO AQUÍ ---
+                    if (/luz verde dispara/i.test(analisisIA)) {
                         const mensajeFinal = `🟢 <b>SEÑAL DE ALTA PRECISIÓN</b> 🟢\n\n` +
                                              `🏷️ <b>Nombre:</b> ${pairData.baseToken.name} (${pairData.baseToken.symbol})\n` +
                                              `📜 <b>CA:</b> <code>${tokenAddress}</code>\n\n` +
@@ -112,7 +113,7 @@ async function cazarGemas() {
                         
                         enviar_telegram(mensajeFinal);
                     } else if (analisisIA !== "ERROR_IA") {
-                        console.log(`❌ Rechazado por Oráculo: ${pairData.baseToken.symbol} - ${analisisIA.substring(0, 30)}...`);
+                        console.log(`❌ Rechazado por Oráculo: ${pairData.baseToken.symbol} - ${analisisIA.substring(0, 40)}...`);
                     }
                 }
             }
