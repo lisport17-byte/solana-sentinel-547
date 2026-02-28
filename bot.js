@@ -1,46 +1,115 @@
-const TelegramBot = require('node-telegram-bot-api');
 const http = require('http');
+const axios = require('axios');
+const fs = require('fs');
+from notificador import enviar_telegram # NUEVO: Importamos Telegram
 
-// 1. SERVIDOR FANTASMA MEJORADO
-// Usamos process.env.PORT para que Render dicte dónde escuchar
+// --- 1. PARCHE FANTASMA ---
 const PORT = process.env.PORT || 10000;
-const server = http.createServer((req, res) => {
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end('Centinela 548: Frecuencia Activa y Vigilando\n');
-});
+http.createServer((req, res) => { res.writeHead(200); res.end('Centinela 548 Activo'); }).listen(PORT);
 
-server.listen(PORT, () => {
-  console.log(`==> Servidor fantasma activo en el puerto ${PORT}`);
-});
-
-// 2. CONFIGURACIÓN DE IDENTIDAD
+// --- 2. IDENTIDAD ---
 const token = process.env.TELEGRAM_TOKEN;
 const chatId = process.env.CHAT_ID;
-const bot = new TelegramBot(token, {polling: true});
+const groqApiKey = process.env.GROQ_API_KEY;
 
-console.log("==> Sistema Centinela 548 activado... Vigilando la luz.");
+console.log("==> Iniciando Secuencia de Arranque Centinela 548...");
 
-// 3. CORAZÓN DEL ESCÁNER (PROVISIONAL)
-async function scanRaydium() {
+// EJECUTAMOS TU PRUEBA AISLADA AL ARRANCAR
+enviar_telegram("🔌 <b>Conexión a la Matrix establecida.</b> El Oráculo está en línea. Protocolo 548 activo.");
+
+
+const archivoMemoria = 'memoria_errores.json';
+let memoriaErrores = [];
+if (fs.existsSync(archivoMemoria)) memoriaErrores = JSON.parse(fs.readFileSync(archivoMemoria, 'utf8'));
+
+bot.onText(/\/fallo (.+) - (.+)/, (msg, match) => {
+    const ca = match[1].trim();
+    const motivo = match[2].trim();
+    memoriaErrores.push({ ca, motivo, fecha: new Date().toISOString() });
+    fs.writeFileSync(archivoMemoria, JSON.stringify(memoriaErrores, null, 2));
+    
+    // Usamos la antena directa para responder
+    enviar_telegram(`🧠 <b>Lección Aprendida:</b>\nCA: <code>${ca}</code>\nMotivo: ${motivo}\n\nLa energía ha sido recalibrada.`);
+});
+
+// --- 5. EL CEREBRO DE LA IA (GROQ) ---
+async function consultarOraculoIA(datosDelToken) {
     try {
-        const timestamp = new Date().toLocaleTimeString();
-        console.log(`[${timestamp}] Escaneando gemas Mcap 30k-100k en Raydium...`);
-        // Aquí conectaremos la API de Groq y Helius en el siguiente paso
+        const contextoErrores = memoriaErrores.slice(-5).map(e => `Fallo: ${e.motivo}`).join(" | ");
+        const promptSystem = `Eres un trader experto de la élite y auditor de contratos en Solana. No haces scalping. 
+        Analiza: ${JSON.stringify(datosDelToken)}. Evalúa: 1. Volumen. 2. Liquidez. 3. No estafa. 4. Control ballenas.
+        ERRORES RECIENTES: [${contextoErrores}]. Si hay similitudes, rechaza.
+        
+        SI Y SOLO SI cumple todo y Mcap 30k-100k, tu ÚNICA respuesta debe ser: "luz verde dispara, es el momento, aquí la elite está concentrando energía, próximamente se verán los movimientos". 
+        Si hay dudas, responde "RECHAZADO" y el motivo.`;
+
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+            model: "llama3-70b-8192",
+            messages: [
+                { role: "system", content: promptSystem },
+                { role: "user", content: "Analiza y cruza con memoria." }
+            ],
+            temperature: 0.1
+        }, {
+            headers: { 'Authorization': `Bearer ${groqApiKey}`, 'Content-Type': 'application/json' }
+        });
+
+        return response.data.choices[0].message.content;
     } catch (error) {
-        console.error("ERROR EN ESCANEO:", error.message);
+        return "ERROR_IA";
     }
 }
 
-// Escaneo inicial y luego cada 15 min
-scanRaydium();
-setInterval(scanRaydium, 15 * 60 * 1000);
+// --- 6. EL CAZADOR AUTOMÁTICO ---
+const tokensAnalizados = new Set();
 
-// 4. COMANDOS DE INTERACCIÓN
-bot.onText(/\/status/, (msg) => {
-    bot.sendMessage(chatId, "El bot está operando en la frecuencia correcta. Esperando confluencia de energía.");
-});
+async function cazarGemas() {
+    try {
+        console.log("🔍 Escaneando radar 30k-100k...");
+        const response = await axios.get('https://api.dexscreener.com/token-profiles/latest/v1');
+        const tokensSolana = response.data.filter(t => t.chainId === 'solana');
 
-// Captura de errores de red para evitar caídas silenciosas
-bot.on('polling_error', (error) => {
-    console.log("AVISO: Error de conexión con Telegram (Polling). Reintentando...");
-});
+        for (const tokenData of tokensSolana) {
+            const tokenAddress = tokenData.tokenAddress;
+
+            if (memoriaErrores.some(e => e.ca === tokenAddress)) continue;
+            if (tokensAnalizados.has(tokenAddress)) continue;
+            tokensAnalizados.add(tokenAddress);
+
+            const dexUrl = `https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`;
+            const dexResponse = await axios.get(dexUrl);
+
+            if (dexResponse.data.pairs && dexResponse.data.pairs.length > 0) {
+                const pairData = dexResponse.data.pairs[0];
+                const mCap = pairData.fdv || 0;
+                const liquidez = pairData.liquidity ? pairData.liquidity.usd : 0;
+
+                if (mCap >= 30000 && mCap <= 100000 && liquidez > 5000) {
+                    const analisisIA = await consultarOraculoIA({
+                        nombre: pairData.baseToken.name, simbolo: pairData.baseToken.symbol,
+                        mCap_USD: mCap, liquidez_USD: liquidez, volumen_24h: pairData.volume.h24
+                    });
+
+                    if (analisisIA.includes("luz verde dispara")) {
+                        // Adaptado al formato HTML de tu nueva antena
+                        const mensajeFinal = `🟢 <b>SEÑAL DE ALTA PRECISIÓN</b> 🟢\n\n` +
+                                             `🏷️ <b>Nombre:</b> ${pairData.baseToken.name} (${pairData.baseToken.symbol})\n` +
+                                             `📜 <b>CA:</b> <code>${tokenAddress}</code>\n\n` +
+                                             `💰 <b>Market Cap:</b> $${mCap.toLocaleString()}\n` +
+                                             `💧 <b>Liquidez:</b> $${liquidez.toLocaleString()}\n\n` +
+                                             `🧠 <b>Oráculo:</b>\n${analisisIA}\n\n` +
+                                             `📊 <a href="https://dexscreener.com/solana/${tokenAddress}">Ver Gráfico en DexScreener</a>`;
+                        
+                        enviar_telegram(mensajeFinal);
+                    }
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 2000)); 
+        }
+    } catch (error) {
+        console.error("Interferencia de rastreo:", error.message);
+    }
+}
+
+setInterval(cazarGemas, 5 * 60 * 1000);
+cazarGemas();
