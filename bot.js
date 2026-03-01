@@ -9,20 +9,19 @@ const { enviar_telegram } = require('./notificador');
 const PORT = process.env.PORT || 10000;
 http.createServer((req, res) => { 
     res.writeHead(200, {'Content-Type': 'text/plain'}); 
-    res.end('Centinela 548: Francotirador Activo, Blindado y Temporalmente Consciente'); 
+    res.end('Centinela 548: Francotirador + Radar 2X Activo'); 
 }).listen(PORT, () => {
-    console.log(`==> Servidor activo en puerto ${PORT}. Sin interferencias.`);
+    console.log(`==> Servidor activo en puerto ${PORT}.`);
 });
 
 // --- 3. IDENTIDAD Y VARIABLES ---
 const groqApiKey = process.env.GROQ_API_KEY;
 
-console.log("==> Iniciando Secuencia de Arranque Centinela 548 (Modo Francotirador Blindado)...");
+console.log("==> Iniciando Secuencia de Arranque Centinela 548 (Con Radar de Abundancia)...");
+enviar_telegram("🔌 <b>Protocolo 548:</b> Francotirador y Radar 2X en línea. Tu tiempo es tuyo, la matriz vigila.");
 
-// Disparo de prueba 
-enviar_telegram("🔌 <b>Protocolo 548:</b> Modo Francotirador activado. Sentido del tiempo inyectado. Mente estricta en línea.");
-
-// --- 4. MEMORIA DE ERRORES (Modo Estático) ---
+// --- 4. SISTEMAS DE MEMORIA ---
+// 4A. Memoria de Errores (Trampas)
 const archivoMemoria = 'memoria_errores.json';
 let memoriaErrores = [];
 if (fs.existsSync(archivoMemoria)) {
@@ -31,7 +30,16 @@ if (fs.existsSync(archivoMemoria)) {
     fs.writeFileSync(archivoMemoria, JSON.stringify([]));
 }
 
-// --- 5. EL CEREBRO DE LA IA (GROQ) CON MENTE DRACONIANA ---
+// 4B. Memoria de Rastreo 2X (El Moonbag)
+const archivoTracking = 'tracking_2x.json';
+let trackingTokens = [];
+if (fs.existsSync(archivoTracking)) {
+    trackingTokens = JSON.parse(fs.readFileSync(archivoTracking, 'utf8'));
+} else {
+    fs.writeFileSync(archivoTracking, JSON.stringify([]));
+}
+
+// --- 5. EL CEREBRO DE LA IA (GROQ) ---
 async function consultarOraculoIA(datosDelToken) {
     try {
         const contextoErrores = memoriaErrores.slice(-5).map(e => `Fallo: ${e.motivo}`).join(" | ");
@@ -40,21 +48,20 @@ async function consultarOraculoIA(datosDelToken) {
         Evalúa estrictamente: 1. Volumen. 2. Liquidez. 3. No estafa. 4. Ballenas. 5. SENTIDO DEL TIEMPO (revisa cambio_5m y cambio_1h).
         
         ERRORES RECIENTES DEL MERCADO: [${contextoErrores}]. Si hay similitudes, rechaza de inmediato.
+        REGLA VITAL: Un porcentaje alto en 5m/1h NO es motivo para rechazar, es motivo para aconsejar esperar el dip.
         
-        REGLA VITAL DE TIEMPO: Un porcentaje alto en 5m/1h NO es motivo para rechazar la gema, sino para cambiar la táctica de entrada. Solo rechaza si hay falta de liquidez, estafa o ballenas.
-        
-        SI Y SOLO SI el token es seguro, tiene volumen y un Mcap de 30k a 100k, ESTÁS OBLIGADO a responder ÚNICA Y EXCLUSIVAMENTE con este formato exacto:
+        SI Y SOLO SI cumple absolutamente todo y tiene un Mcap de 30k a 100k, ESTÁS ESTRICTAMENTE OBLIGADO a responder ÚNICA Y EXCLUSIVAMENTE con este formato exacto:
         
         luz verde dispara, es el momento, aquí la elite está concentrando energía, próximamente se verán los movimientos.
-        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP, la vela está muy vertical" si los porcentajes de 5m son muy altos, o "ENTRA AHORA (MARKET)" si el precio está estable].
+        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP" si los porcentajes son altos, o "ENTRA AHORA" si está estable].
         
-        Si hay peligro real (estafa, sin liquidez), responde "RECHAZADO" seguido del motivo.`;
+        Si hay la más mínima duda (sin liquidez, riesgo real), responde "RECHAZADO" y 1 sola oración de motivo.`;
 
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: promptSystem },
-                { role: "user", content: "Analiza esta gema, aplica el sentido del tiempo y dame el veredicto directo." }
+                { role: "user", content: "Analiza esta gema y ejecuta el protocolo." }
             ],
             temperature: 0.1
         }, {
@@ -66,18 +73,58 @@ async function consultarOraculoIA(datosDelToken) {
 
         return response.data.choices[0].message.content;
     } catch (error) {
-        const detalleError = error.response && error.response.data ? JSON.stringify(error.response.data) : error.message;
-        console.error("🚨 Interferencia exacta en el Oráculo IA:", detalleError);
+        console.error("🚨 Interferencia IA.");
         return "ERROR_IA";
     }
 }
 
-// --- 6. EL CAZADOR AUTOMÁTICO ---
+// --- 6. EL RADAR DE TAKE PROFIT (NUEVO CEREBRO) ---
+async function vigilarTakeProfit() {
+    if (trackingTokens.length === 0) return;
+    console.log(`🎯 Radar 2X: Vigilando ${trackingTokens.length} gemas en tu portafolio...`);
+
+    for (let i = 0; i < trackingTokens.length; i++) {
+        const token = trackingTokens[i];
+        try {
+            const dexUrl = `https://api.dexscreener.com/latest/dex/tokens/${token.ca}`;
+            const dexResponse = await axios.get(dexUrl);
+
+            if (dexResponse.data.pairs && dexResponse.data.pairs.length > 0) {
+                const currentMcap = dexResponse.data.pairs[0].fdv || 0;
+
+                // SI EL MARKET CAP SE MULTIPLICA POR 2 (100% DE GANANCIA)
+                if (currentMcap >= (token.entryMcap * 2)) {
+                    const mensajeVenta = `🚨 <b>¡OBJETIVO 2X ALCANZADO!</b> 🚨\n\n` +
+                                         `💎 <b>Gema:</b> ${token.symbol}\n` +
+                                         `📈 <b>Mcap Inicial:</b> $${token.entryMcap.toLocaleString()}\n` +
+                                         `🚀 <b>Mcap Actual:</b> $${currentMcap.toLocaleString()}\n\n` +
+                                         `✅ <b>ACCIÓN INMINENTE:</b> Entra a tu wallet y RETIRA TU CAPITAL INICIAL ($20) AHORA. El resto es energía libre.`;
+                    
+                    enviar_telegram(mensajeVenta);
+
+                    // Lo borramos del radar para que no siga enviando el mensaje
+                    trackingTokens.splice(i, 1);
+                    i--; // Ajustamos el índice tras borrar
+                    fs.writeFileSync(archivoTracking, JSON.stringify(trackingTokens, null, 2));
+                }
+            }
+            // Pequeña pausa para no saturar DexScreener
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
+        } catch (err) {
+            console.error(`Error vigilando gema ${token.symbol}:`, err.message);
+        }
+    }
+}
+
+// Ejecutar el Radar 2X cada 3 minutos
+setInterval(vigilarTakeProfit, 3 * 60 * 1000);
+
+// --- 7. EL CAZADOR AUTOMÁTICO ---
 const tokensAnalizados = new Set();
 
 async function cazarGemas() {
     try {
-        console.log("🔍 Escaneando la blockchain, buscando liquidez en Raydium...");
+        console.log("🔍 Escaneando la blockchain en busca de nuevas frecuencias...");
         const response = await axios.get('https://api.dexscreener.com/token-profiles/latest/v1');
         const tokensSolana = response.data.filter(t => t.chainId === 'solana');
 
@@ -97,20 +144,16 @@ async function cazarGemas() {
                 const liquidez = pairData.liquidity ? pairData.liquidity.usd : 0;
 
                 if (mCap >= 30000 && mCap <= 100000 && liquidez > 5000) {
-                    console.log(`🔥 Gema encontrada: ${pairData.baseToken.symbol} | Mcap: $${mCap.toLocaleString()}`);
-                    
-                    // INYECTAMOS LOS DATOS DE TIEMPO (M5 y H1) AL CEREBRO DE LA IA
                     const analisisIA = await consultarOraculoIA({
                         nombre: pairData.baseToken.name, 
                         simbolo: pairData.baseToken.symbol,
                         mCap_USD: mCap, 
                         liquidez_USD: liquidez, 
                         volumen_24h: pairData.volume.h24,
-                        cambio_5m: pairData.priceChange?.m5 || 0, // Variación en los últimos 5 mins
-                        cambio_1h: pairData.priceChange?.h1 || 0  // Variación en la última hora
+                        cambio_5m: pairData.priceChange?.m5 || 0, 
+                        cambio_1h: pairData.priceChange?.h1 || 0  
                     });
 
-                    // BLINDAJE REGEX ACTIVADO
                     if (/luz verde dispara/i.test(analisisIA)) {
                         const mensajeFinal = `🟢 <b>SEÑAL DE ALTA PRECISIÓN</b> 🟢\n\n` +
                                              `🏷️ <b>Nombre:</b> ${pairData.baseToken.name} (${pairData.baseToken.symbol})\n` +
@@ -121,15 +164,23 @@ async function cazarGemas() {
                                              `📊 <a href="https://dexscreener.com/solana/${tokenAddress}">Ver Gráfico y Comprar</a>`;
                         
                         enviar_telegram(mensajeFinal);
-                    } else if (analisisIA !== "ERROR_IA") {
-                        console.log(`❌ Rechazado: ${pairData.baseToken.symbol} - ${analisisIA.substring(0, 50)}...`);
+
+                        // --- NUEVO: GUARDAR EN EL RADAR 2X ---
+                        trackingTokens.push({
+                            ca: tokenAddress,
+                            symbol: pairData.baseToken.symbol,
+                            entryMcap: mCap, // Guardamos el Mcap de entrada
+                            fecha: new Date().toISOString()
+                        });
+                        fs.writeFileSync(archivoTracking, JSON.stringify(trackingTokens, null, 2));
+                        console.log(`🎯 Gema ${pairData.baseToken.symbol} añadida al Radar 2X.`);
                     }
                 }
             }
             await new Promise(resolve => setTimeout(resolve, 2000)); 
         }
     } catch (error) {
-        console.error("Interferencia en el rastreo del mercado:", error.message);
+        console.error("Interferencia en el rastreo:", error.message);
     }
 }
 
