@@ -37,16 +37,18 @@ async function consultarOraculoIA(datosDelToken) {
         const contextoErrores = memoriaErrores.slice(-5).map(e => `Fallo: ${e.motivo}`).join(" | ");
         const promptSystem = `Eres un trader experto de la élite y auditor de contratos en Solana. No haces scalping. 
         Analiza estos datos del token: ${JSON.stringify(datosDelToken)}. 
-        Evalúa estrictamente: 1. Volumen. 2. Liquidez. 3. No estafa. 4. Ballenas. 5. SENTIDO DEL TIEMPO (revisa cambio_5m y cambio_1h para saber si está en la punta de una vela inflada o si es un buen momento).
+        Evalúa estrictamente: 1. Volumen. 2. Liquidez. 3. No estafa. 4. Ballenas. 5. SENTIDO DEL TIEMPO (revisa cambio_5m y cambio_1h).
         
         ERRORES RECIENTES DEL MERCADO: [${contextoErrores}]. Si hay similitudes, rechaza de inmediato.
         
-        SI Y SOLO SI cumple absolutamente todo y tiene un Mcap de 30k a 100k, ESTÁS ESTRICTAMENTE OBLIGADO a responder ÚNICA Y EXCLUSIVAMENTE con este formato exacto (SIN viñetas, SIN saludos, SIN pensar en voz alta):
+        REGLA VITAL DE TIEMPO: Un porcentaje alto en 5m/1h NO es motivo para rechazar la gema, sino para cambiar la táctica de entrada. Solo rechaza si hay falta de liquidez, estafa o ballenas.
+        
+        SI Y SOLO SI el token es seguro, tiene volumen y un Mcap de 30k a 100k, ESTÁS OBLIGADO a responder ÚNICA Y EXCLUSIVAMENTE con este formato exacto:
         
         luz verde dispara, es el momento, aquí la elite está concentrando energía, próximamente se verán los movimientos.
-        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP, ha subido demasiado rápido" si los porcentajes de 5m/1h son muy altos, o "ENTRA AHORA (MARKET), la corrección es saludable" si el precio está estable o en retroceso].
+        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP, la vela está muy vertical" si los porcentajes de 5m son muy altos, o "ENTRA AHORA (MARKET)" si el precio está estable].
         
-        Si hay la más mínima duda o peligro, tu ÚNICA respuesta debe ser "RECHAZADO" seguido de 1 sola oración con el motivo.`;
+        Si hay peligro real (estafa, sin liquidez), responde "RECHAZADO" seguido del motivo.`;
 
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
             model: "llama-3.3-70b-versatile",
