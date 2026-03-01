@@ -9,7 +9,7 @@ const { enviar_telegram } = require('./notificador');
 const PORT = process.env.PORT || 10000;
 http.createServer((req, res) => { 
     res.writeHead(200, {'Content-Type': 'text/plain'}); 
-    res.end('Centinela 548: Francotirador + Radar 2X Activo'); 
+    res.end('Centinela 548: Francotirador + Radar 2X + Mente Estricta Activos'); 
 }).listen(PORT, () => {
     console.log(`==> Servidor activo en puerto ${PORT}.`);
 });
@@ -17,8 +17,8 @@ http.createServer((req, res) => {
 // --- 3. IDENTIDAD Y VARIABLES ---
 const groqApiKey = process.env.GROQ_API_KEY;
 
-console.log("==> Iniciando Secuencia de Arranque Centinela 548 (Con Radar de Abundancia)...");
-enviar_telegram("🔌 <b>Protocolo 548:</b> Francotirador y Radar 2X en línea. Tu tiempo es tuyo, la matriz vigila.");
+console.log("==> Iniciando Secuencia de Arranque Centinela 548...");
+enviar_telegram("🔌 <b>Protocolo 548:</b> Francotirador, Radar 2X y Mente Estricta en línea. Tu tiempo es tuyo, la matriz vigila.");
 
 // --- 4. SISTEMAS DE MEMORIA ---
 // 4A. Memoria de Errores (Trampas)
@@ -39,31 +39,32 @@ if (fs.existsSync(archivoTracking)) {
     fs.writeFileSync(archivoTracking, JSON.stringify([]));
 }
 
-// --- 5. EL CEREBRO DE LA IA (GROQ) ---
+// --- 5. EL CEREBRO DE LA IA (GROQ) MENTE DRACONIANA ---
 async function consultarOraculoIA(datosDelToken) {
     try {
         const contextoErrores = memoriaErrores.slice(-5).map(e => `Fallo: ${e.motivo}`).join(" | ");
-        const promptSystem = `Eres un trader experto de la élite y auditor de contratos en Solana. No haces scalping. 
-        Analiza estos datos del token: ${JSON.stringify(datosDelToken)}. 
-        Evalúa estrictamente: 1. Volumen. 2. Liquidez. 3. No estafa. 4. Ballenas. 5. SENTIDO DEL TIEMPO (revisa cambio_5m y cambio_1h).
         
-        ERRORES RECIENTES DEL MERCADO: [${contextoErrores}]. Si hay similitudes, rechaza de inmediato.
-        REGLA VITAL: Un porcentaje alto en 5m/1h NO es motivo para rechazar, es motivo para aconsejar esperar el dip.
+        const promptSystem = `Eres una máquina de auditoría de contratos en Solana. Tu única función es filtrar y dar el veredicto.
         
-        SI Y SOLO SI cumple absolutamente todo y tiene un Mcap de 30k a 100k, ESTÁS ESTRICTAMENTE OBLIGADO a responder ÚNICA Y EXCLUSIVAMENTE con este formato exacto:
+        REGLA DRACONIANA ABSOLUTA: TIENES ESTRICTAMENTE PROHIBIDO EXPLICAR TU RAZONAMIENTO. NO SALUDES. NO NUMERES LOS PASOS. NO DES JUSTIFICACIONES. 
+        
+        Criterios internos (NO LOS ESCRIBAS, SOLO ÚSALOS PARA PENSAR): 1. Volumen 2. Liquidez 3. No estafa 4. Ballenas 5. SENTIDO DEL TIEMPO (cambio_5m y cambio_1h).
+        ERRORES RECIENTES: [${contextoErrores}].
+        
+        Si el token es SEGURO y su Mcap está entre 30k y 100k, tu respuesta DEBE SER ÚNICA Y EXCLUSIVAMENTE este texto (ni una palabra antes, ni una después):
         
         luz verde dispara, es el momento, aquí la elite está concentrando energía, próximamente se verán los movimientos.
-        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP" si los porcentajes son altos, o "ENTRA AHORA" si está estable].
+        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP" si el % de 5m/1h es alto, o "ENTRA AHORA" si es estable o negativo].
         
-        Si hay la más mínima duda (sin liquidez, riesgo real), responde "RECHAZADO" y 1 sola oración de motivo.`;
+        Si el token es PELIGROSO, tu respuesta DEBE SER ÚNICA Y EXCLUSIVAMENTE la palabra "RECHAZADO" seguida de máximo 10 palabras de motivo.`;
 
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
             model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: promptSystem },
-                { role: "user", content: "Analiza esta gema y ejecuta el protocolo." }
+                { role: "user", content: `Datos: ${JSON.stringify(datosDelToken)}. Dame el veredicto final. CERO EXPLICACIONES.` }
             ],
-            temperature: 0.1
+            temperature: 0.0 // Cero creatividad, 100% frialdad
         }, {
             headers: { 
                 'Authorization': `Bearer ${groqApiKey}`, 
@@ -174,6 +175,8 @@ async function cazarGemas() {
                         });
                         fs.writeFileSync(archivoTracking, JSON.stringify(trackingTokens, null, 2));
                         console.log(`🎯 Gema ${pairData.baseToken.symbol} añadida al Radar 2X.`);
+                    } else if (analisisIA !== "ERROR_IA") {
+                        console.log(`❌ Rechazado: ${pairData.baseToken.symbol} - ${analisisIA}`);
                     }
                 }
             }
