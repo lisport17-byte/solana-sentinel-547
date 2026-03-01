@@ -9,7 +9,7 @@ const { enviar_telegram } = require('./notificador');
 const PORT = process.env.PORT || 10000;
 http.createServer((req, res) => { 
     res.writeHead(200, {'Content-Type': 'text/plain'}); 
-    res.end('Centinela 548: Francotirador Activo y Blindado'); 
+    res.end('Centinela 548: Francotirador Activo, Blindado y Temporalmente Consciente'); 
 }).listen(PORT, () => {
     console.log(`==> Servidor activo en puerto ${PORT}. Sin interferencias.`);
 });
@@ -20,7 +20,7 @@ const groqApiKey = process.env.GROQ_API_KEY;
 console.log("==> Iniciando Secuencia de Arranque Centinela 548 (Modo Francotirador Blindado)...");
 
 // Disparo de prueba 
-enviar_telegram("🔌 <b>Protocolo 548:</b> Modo Francotirador activado. Escudo Regex en línea. Vigilando la luz.");
+enviar_telegram("🔌 <b>Protocolo 548:</b> Modo Francotirador activado. Sentido del tiempo inyectado. Mente estricta en línea.");
 
 // --- 4. MEMORIA DE ERRORES (Modo Estático) ---
 const archivoMemoria = 'memoria_errores.json';
@@ -31,24 +31,28 @@ if (fs.existsSync(archivoMemoria)) {
     fs.writeFileSync(archivoMemoria, JSON.stringify([]));
 }
 
-// --- 5. EL CEREBRO DE LA IA (GROQ) ---
+// --- 5. EL CEREBRO DE LA IA (GROQ) CON MENTE DRACONIANA ---
 async function consultarOraculoIA(datosDelToken) {
     try {
         const contextoErrores = memoriaErrores.slice(-5).map(e => `Fallo: ${e.motivo}`).join(" | ");
         const promptSystem = `Eres un trader experto de la élite y auditor de contratos en Solana. No haces scalping. 
         Analiza estos datos del token: ${JSON.stringify(datosDelToken)}. 
-        Evalúa estrictamente: 1. Volumen en movimiento. 2. Liquidez para cobrar profit. 3. No estafa (sin puertas traseras). 4. No hay suficientes ballenas para manipular.
+        Evalúa estrictamente: 1. Volumen. 2. Liquidez. 3. No estafa. 4. Ballenas. 5. SENTIDO DEL TIEMPO (revisa cambio_5m y cambio_1h para saber si está en la punta de una vela inflada o si es un buen momento).
         
         ERRORES RECIENTES DEL MERCADO: [${contextoErrores}]. Si hay similitudes, rechaza de inmediato.
         
-        SI Y SOLO SI cumple absolutamente todo y tiene un Mcap de 30k a 100k, tu ÚNICA respuesta debe ser exactamente esta frase: "luz verde dispara, es el momento, aquí la elite está concentrando energía, próximamente se verán los movimientos". 
-        Si hay dudas o peligro, responde "RECHAZADO" y el motivo.`;
+        SI Y SOLO SI cumple absolutamente todo y tiene un Mcap de 30k a 100k, ESTÁS ESTRICTAMENTE OBLIGADO a responder ÚNICA Y EXCLUSIVAMENTE con este formato exacto (SIN viñetas, SIN saludos, SIN pensar en voz alta):
+        
+        luz verde dispara, es el momento, aquí la elite está concentrando energía, próximamente se verán los movimientos.
+        🎯 TÁCTICA DE ENTRADA: [Escribe "ESPERA EL DIP, ha subido demasiado rápido" si los porcentajes de 5m/1h son muy altos, o "ENTRA AHORA (MARKET), la corrección es saludable" si el precio está estable o en retroceso].
+        
+        Si hay la más mínima duda o peligro, tu ÚNICA respuesta debe ser "RECHAZADO" seguido de 1 sola oración con el motivo.`;
 
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: "llama-3.3-70b-versatile", // Modelo de última generación
+            model: "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: promptSystem },
-                { role: "user", content: "Analiza esta gema y cruza los datos con nuestra memoria." }
+                { role: "user", content: "Analiza esta gema, aplica el sentido del tiempo y dame el veredicto directo." }
             ],
             temperature: 0.1
         }, {
@@ -91,29 +95,32 @@ async function cazarGemas() {
                 const liquidez = pairData.liquidity ? pairData.liquidity.usd : 0;
 
                 if (mCap >= 30000 && mCap <= 100000 && liquidez > 5000) {
-                    console.log(`🔥 Gema potencial encontrada: ${pairData.baseToken.symbol} | Mcap: $${mCap.toLocaleString()}`);
+                    console.log(`🔥 Gema encontrada: ${pairData.baseToken.symbol} | Mcap: $${mCap.toLocaleString()}`);
                     
+                    // INYECTAMOS LOS DATOS DE TIEMPO (M5 y H1) AL CEREBRO DE LA IA
                     const analisisIA = await consultarOraculoIA({
                         nombre: pairData.baseToken.name, 
                         simbolo: pairData.baseToken.symbol,
                         mCap_USD: mCap, 
                         liquidez_USD: liquidez, 
-                        volumen_24h: pairData.volume.h24
+                        volumen_24h: pairData.volume.h24,
+                        cambio_5m: pairData.priceChange?.m5 || 0, // Variación en los últimos 5 mins
+                        cambio_1h: pairData.priceChange?.h1 || 0  // Variación en la última hora
                     });
 
-                    // --- EL BLINDAJE REGEX APLICADO AQUÍ ---
+                    // BLINDAJE REGEX ACTIVADO
                     if (/luz verde dispara/i.test(analisisIA)) {
                         const mensajeFinal = `🟢 <b>SEÑAL DE ALTA PRECISIÓN</b> 🟢\n\n` +
                                              `🏷️ <b>Nombre:</b> ${pairData.baseToken.name} (${pairData.baseToken.symbol})\n` +
                                              `📜 <b>CA:</b> <code>${tokenAddress}</code>\n\n` +
                                              `💰 <b>Market Cap:</b> $${mCap.toLocaleString()}\n` +
                                              `💧 <b>Liquidez:</b> $${liquidez.toLocaleString()}\n\n` +
-                                             `🧠 <b>Mensaje del Oráculo:</b>\n${analisisIA}\n\n` +
+                                             `🧠 <b>Análisis Táctico:</b>\n${analisisIA}\n\n` +
                                              `📊 <a href="https://dexscreener.com/solana/${tokenAddress}">Ver Gráfico y Comprar</a>`;
                         
                         enviar_telegram(mensajeFinal);
                     } else if (analisisIA !== "ERROR_IA") {
-                        console.log(`❌ Rechazado por Oráculo: ${pairData.baseToken.symbol} - ${analisisIA.substring(0, 40)}...`);
+                        console.log(`❌ Rechazado: ${pairData.baseToken.symbol} - ${analisisIA.substring(0, 50)}...`);
                     }
                 }
             }
